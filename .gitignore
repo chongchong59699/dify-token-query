@@ -1,0 +1,35 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Codex
+.codex/
+
+# Maven / Java
+target/
+*.class
+
+# Logs
+logs/
+*.log
+
+# Archives and packages
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+*.jar
+*.war
+*.ear
+
+# OS / temp
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Local runtime config
+DifyTokenQueryTool/
