@@ -11,11 +11,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.table.AbstractTableModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -30,7 +33,7 @@ public class DatasourceManagerDialog extends JDialog {
     private boolean changed;
 
     public DatasourceManagerDialog(Frame owner, AppConfig config, ConfigService configService, DifyQueryService queryService) {
-        super(owner, "管理数据库", true);
+        super(owner, "管理Dify", true);
         this.config = config;
         this.configService = configService;
         this.queryService = queryService;
@@ -52,6 +55,19 @@ public class DatasourceManagerDialog extends JDialog {
         table.getColumnModel().getColumn(1).setPreferredWidth(56);
         table.getColumnModel().getColumn(2).setPreferredWidth(160);
         table.getColumnModel().getColumn(7).setPreferredWidth(300);
+        table.getColumnModel().getColumn(8).setPreferredWidth(220);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(event)) {
+                    int row = table.rowAtPoint(event.getPoint());
+                    if (row >= 0) {
+                        table.setRowSelectionInterval(row, row);
+                        editDatasource();
+                    }
+                }
+            }
+        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addButton = new JButton("新增");
@@ -117,7 +133,7 @@ public class DatasourceManagerDialog extends JDialog {
             return;
         }
         if (config.getDatasources().size() <= 1) {
-            JOptionPane.showMessageDialog(this, "至少保留一个数据库配置", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "至少保留一个Dify配置", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(this, "确定删除：" + selected.getName() + "？", "确认删除", JOptionPane.YES_NO_OPTION);
@@ -193,11 +209,11 @@ public class DatasourceManagerDialog extends JDialog {
     }
 
     private void showSelectTip() {
-        JOptionPane.showMessageDialog(this, "请先选择一条数据库配置", "提示", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(this, "请先选择一条Dify配置", "提示", JOptionPane.WARNING_MESSAGE);
     }
 
     private class DatasourceTableModel extends AbstractTableModel {
-        private final String[] columns = {"默认", "启用", "名称", "Host", "Port", "Database", "用户名", "JDBC URL"};
+        private final String[] columns = {"默认", "启用", "名称", "Host", "Port", "Database", "用户名", "JDBC URL", "Dify前端地址"};
 
         @Override
         public int getRowCount() {
@@ -235,6 +251,8 @@ public class DatasourceManagerDialog extends JDialog {
                     return datasource.getUsername();
                 case 7:
                     return datasource.getEffectiveJdbcUrl();
+                case 8:
+                    return datasource.getDifyFrontendUrl();
                 default:
                     return "";
             }

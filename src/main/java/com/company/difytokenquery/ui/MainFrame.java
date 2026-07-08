@@ -24,13 +24,19 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +58,7 @@ public class MainFrame extends JFrame {
     private final JButton clearButton = new JButton("清空");
     private final JButton copySelectedButton = new JButton("复制选中");
     private final JButton copyAllButton = new JButton("复制全部");
-    private final JButton manageDatasourceButton = new JButton("管理数据库");
+    private final JButton manageDatasourceButton = new JButton("管理Dify");
     private final JButton testConnectionButton = new JButton("测试连接");
 
     public MainFrame(ConfigService configService, DifyQueryService queryService) {
@@ -88,7 +94,7 @@ public class MainFrame extends JFrame {
 
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
-        topPanel.add(new JLabel("数据库"));
+        topPanel.add(new JLabel("Dify配置"));
         datasourceComboBox.setPrototypeDisplayValue(prototypeDatasource());
         topPanel.add(datasourceComboBox);
         topPanel.add(manageDatasourceButton);
@@ -118,13 +124,17 @@ public class MainFrame extends JFrame {
         resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         resultTable.setRowHeight(26);
         resultTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        resultTable.getColumnModel().getColumn(0).setPreferredWidth(340);
-        resultTable.getColumnModel().getColumn(1).setPreferredWidth(320);
-        resultTable.getColumnModel().getColumn(2).setPreferredWidth(420);
-        resultTable.getColumnModel().getColumn(3).setPreferredWidth(120);
-        resultTable.getColumnModel().getColumn(4).setPreferredWidth(180);
-        resultTable.getColumnModel().getColumn(5).setPreferredWidth(110);
-        resultTable.getColumnModel().getColumn(6).setPreferredWidth(420);
+        resultTable.getColumnModel().getColumn(0).setPreferredWidth(270);
+        resultTable.getColumnModel().getColumn(1).setPreferredWidth(300);
+        resultTable.getColumnModel().getColumn(2).setPreferredWidth(250);
+        resultTable.getColumnModel().getColumn(3).setPreferredWidth(110);
+        resultTable.getColumnModel().getColumn(4).setPreferredWidth(160);
+        resultTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+        resultTable.getColumnModel().getColumn(6).setPreferredWidth(80);
+        resultTable.getColumnModel().getColumn(6).setCellRenderer(new ConfigurationLinkRenderer());
+        resultTable.getColumnModel().getColumn(7).setPreferredWidth(100);
+        resultTable.getColumnModel().getColumn(7).setCellRenderer(new ConfigurationLinkRenderer());
+        resultTable.getColumnModel().getColumn(8).setPreferredWidth(420);
         JScrollPane tableScrollPane = new JScrollPane(resultTable);
         tableScrollPane.setBorder(BorderFactory.createTitledBorder("查询结果"));
 
@@ -153,6 +163,18 @@ public class MainFrame extends JFrame {
         clearButton.addActionListener(e -> clearAll());
         copySelectedButton.addActionListener(e -> copySelectedRows());
         copyAllButton.addActionListener(e -> copyAllRows());
+        resultTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                handleConfigurationActionAt(e);
+            }
+        });
+        resultTable.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                resultTable.setCursor(isConfigurationActionAt(e) ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+            }
+        });
     }
 
     private void loadConfig() {
@@ -202,7 +224,7 @@ public class MainFrame extends JFrame {
     private void testCurrentConnection() {
         DatasourceConfig datasource = getSelectedDatasource();
         if (datasource == null) {
-            JOptionPane.showMessageDialog(this, "请先选择数据库", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "请先选择Dify配置", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
         setWorking(true, "正在测试连接：" + datasource.getName());
@@ -251,7 +273,7 @@ public class MainFrame extends JFrame {
         }
         DatasourceConfig datasource = getSelectedDatasource();
         if (datasource == null) {
-            JOptionPane.showMessageDialog(this, "请先选择数据库", "查询", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "请先选择Dify配置", "查询", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -341,13 +363,73 @@ public class MainFrame extends JFrame {
                 if (column > 0) {
                     builder.append('\t');
                 }
-                Object value = resultTableModel.getValueAt(modelRow, column);
-                builder.append(value == null ? "" : String.valueOf(value));
+                builder.append(resultTableModel.getCopyValueAt(modelRow, column));
             }
             builder.append(System.lineSeparator());
         }
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(builder.toString()), null);
         statusLabel.setText("已复制 " + viewRows.length + " 行");
+    }
+
+    private void handleConfigurationActionAt(MouseEvent event) {
+        int viewColumn = resultTable.columnAtPoint(event.getPoint());
+        if (viewColumn < 0) {
+            return;
+        }
+        int modelColumn = resultTable.convertColumnIndexToModel(viewColumn);
+        boolean openAction = modelColumn == ResultTableModel.CONFIGURATION_COLUMN;
+        boolean copyAction = modelColumn == ResultTableModel.COPY_CONFIGURATION_COLUMN;
+        if (!openAction && !copyAction) {
+            return;
+        }
+
+        int viewRow = resultTable.rowAtPoint(event.getPoint());
+        if (viewRow < 0) {
+            return;
+        }
+        int modelRow = resultTable.convertRowIndexToModel(viewRow);
+        String url = resultTableModel.getResultAt(modelRow).getConfigurationUrl();
+        if (url == null || url.trim().isEmpty()) {
+            return;
+        }
+        if (openAction) {
+            openUrl(url);
+        } else {
+            copyConfigurationUrl(url);
+        }
+    }
+
+    private boolean isConfigurationActionAt(MouseEvent event) {
+        int viewColumn = resultTable.columnAtPoint(event.getPoint());
+        int viewRow = resultTable.rowAtPoint(event.getPoint());
+        if (viewRow < 0 || viewColumn < 0) {
+            return false;
+        }
+        int modelColumn = resultTable.convertColumnIndexToModel(viewColumn);
+        if (modelColumn != ResultTableModel.CONFIGURATION_COLUMN && modelColumn != ResultTableModel.COPY_CONFIGURATION_COLUMN) {
+            return false;
+        }
+        int modelRow = resultTable.convertRowIndexToModel(viewRow);
+        String url = resultTableModel.getResultAt(modelRow).getConfigurationUrl();
+        return url != null && !url.trim().isEmpty();
+    }
+
+    private void copyConfigurationUrl(String url) {
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(url), null);
+        statusLabel.setText("已复制编排链接：" + url);
+    }
+
+    private void openUrl(String url) {
+        if (!Desktop.isDesktopSupported() || !Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            JOptionPane.showMessageDialog(this, "当前环境不支持自动打开浏览器：" + url, "打开编排", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        try {
+            Desktop.getDesktop().browse(URI.create(url));
+            statusLabel.setText("已打开编排：" + url);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "打开编排失败", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private DatasourceConfig getSelectedDatasource() {
@@ -378,5 +460,21 @@ public class MainFrame extends JFrame {
         int width = Math.min(1600, Math.max(1280, (int) (screenSize.width * 0.86)));
         int height = Math.min(950, Math.max(820, (int) (screenSize.height * 0.86)));
         return new Dimension(Math.min(width, screenSize.width - 80), Math.min(height, screenSize.height - 80));
+    }
+
+    private static class ConfigurationLinkRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String text = value == null ? "" : String.valueOf(value);
+            label.setHorizontalAlignment(JLabel.CENTER);
+            if ("编排".equals(text) || "复制链接".equals(text)) {
+                label.setText("<html><a href=''>" + text + "</a></html>");
+            } else {
+                label.setText("");
+            }
+            return label;
+        }
     }
 }

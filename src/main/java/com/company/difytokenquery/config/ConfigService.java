@@ -14,6 +14,7 @@ import java.util.List;
 public class ConfigService {
     public static final String DEFAULT_DATASOURCE_ID = "company-170-dify-pg";
     public static final String DEFAULT_DATASOURCE_NAME = "公司170dify pg库";
+    public static final String DEFAULT_DIFY_FRONTEND_URL = "http://192.2.2.170:8180";
 
     private final Path configFile;
     private final ObjectMapper objectMapper;
@@ -70,6 +71,7 @@ public class ConfigService {
         datasource.setPort(5432);
         datasource.setDatabase("dify");
         datasource.setJdbcUrl("jdbc:postgresql://192.2.2.170:5432/dify");
+        datasource.setDifyFrontendUrl(DEFAULT_DIFY_FRONTEND_URL);
         datasource.setUsername("postgres");
         datasource.setPassword("difyai123456");
         datasource.setEnabled(true);
@@ -95,6 +97,7 @@ public class ConfigService {
         String defaultId = config.getDefaultDatasourceId();
         boolean defaultExists = false;
         for (DatasourceConfig datasource : config.getDatasources()) {
+            fillBuiltInDifyFrontendUrl(datasource);
             datasource.normalize();
             if (datasource.getId().equals(defaultId)) {
                 defaultExists = true;
@@ -102,6 +105,15 @@ public class ConfigService {
         }
         if (!defaultExists) {
             config.setDefaultDatasourceId(config.getDatasources().get(0).getId());
+        }
+    }
+
+    private void fillBuiltInDifyFrontendUrl(DatasourceConfig datasource) {
+        if (!DEFAULT_DATASOURCE_ID.equals(datasource.getId())) {
+            return;
+        }
+        if (datasource.getDifyFrontendUrl() == null || datasource.getDifyFrontendUrl().trim().isEmpty()) {
+            datasource.setDifyFrontendUrl(DEFAULT_DIFY_FRONTEND_URL);
         }
     }
 }

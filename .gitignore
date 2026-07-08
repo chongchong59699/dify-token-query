@@ -6,6 +6,10 @@
 # Codex
 .codex/
 
+# Project docs
+*.md
+!PROJECT_MEMORY.md
+
 # Maven / Java
 target/
 *.class

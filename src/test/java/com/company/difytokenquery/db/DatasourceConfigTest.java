@@ -24,4 +24,15 @@ public class DatasourceConfigTest {
 
         assertEquals("jdbc:postgresql://localhost:15432/dify", datasource.getJdbcUrl());
     }
+
+    @Test
+    public void buildDifyConfigurationUrlShouldAppendAppPath() {
+        assertEquals(
+                "http://192.2.2.170:8180/app/a89939ed-57c2-4a7c-9af6-1b5c46545cdb/configuration",
+                DatasourceConfig.buildDifyConfigurationUrl(
+                        "http://192.2.2.170:8180/",
+                        "a89939ed-57c2-4a7c-9af6-1b5c46545cdb"
+                )
+        );
+    }
 }

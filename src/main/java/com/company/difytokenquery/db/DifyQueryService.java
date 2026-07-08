@@ -55,7 +55,7 @@ public class DifyQueryService {
         try (Connection connection = openConnection(datasource);
              PreparedStatement statement = connection.prepareStatement(QUERY_SQL)) {
             for (String token : validTokens) {
-                results.add(queryOne(statement, token, datasourceName));
+                results.add(queryOne(statement, token, datasource));
             }
         } catch (SQLException e) {
             String message = rootMessage(e);
@@ -77,20 +77,22 @@ public class DifyQueryService {
         }
     }
 
-    private AppQueryResult queryOne(PreparedStatement statement, String token, String datasourceName) throws SQLException {
+    private AppQueryResult queryOne(PreparedStatement statement, String token, DatasourceConfig datasource) throws SQLException {
         statement.clearParameters();
         statement.setString(1, token);
         try (ResultSet resultSet = statement.executeQuery()) {
             if (resultSet.next()) {
+                String appId = resultSet.getString("id");
                 return AppQueryResult.success(
                         token,
-                        resultSet.getString("id"),
+                        appId,
                         resultSet.getString("name"),
                         resultSet.getString("mode"),
-                        datasourceName
+                        datasource.getName(),
+                        DatasourceConfig.buildDifyConfigurationUrl(datasource.getDifyFrontendUrl(), appId)
                 );
             }
-            return AppQueryResult.notFound(token, datasourceName);
+            return AppQueryResult.notFound(token, datasource.getName());
         }
     }
 

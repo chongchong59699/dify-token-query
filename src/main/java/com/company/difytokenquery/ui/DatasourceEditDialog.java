@@ -24,6 +24,7 @@ public class DatasourceEditDialog extends JDialog {
     private final JTextField portField = new JTextField(28);
     private final JTextField databaseField = new JTextField(28);
     private final JTextField jdbcUrlField = new JTextField(28);
+    private final JTextField difyFrontendUrlField = new JTextField(28);
     private final JTextField usernameField = new JTextField(28);
     private final JPasswordField passwordField = new JPasswordField(28);
     private final JCheckBox enabledCheckBox = new JCheckBox("启用", true);
@@ -32,7 +33,7 @@ public class DatasourceEditDialog extends JDialog {
     private DatasourceConfig result;
 
     public DatasourceEditDialog(Window owner, DatasourceConfig datasource) {
-        super(owner, datasource == null ? "新增数据库" : "编辑数据库", ModalityType.APPLICATION_MODAL);
+        super(owner, datasource == null ? "新增Dify配置" : "编辑Dify配置", ModalityType.APPLICATION_MODAL);
         this.source = datasource == null ? new DatasourceConfig() : datasource.copy();
         initComponents();
         fillFields();
@@ -58,6 +59,7 @@ public class DatasourceEditDialog extends JDialog {
         buildJdbcButton.addActionListener(e -> jdbcUrlField.setText(buildJdbcUrlFromFields()));
         addRow(formPanel, row++, "JDBC URL", jdbcUrlField, buildJdbcButton);
 
+        addRow(formPanel, row++, "Dify前端地址", difyFrontendUrlField, null);
         addRow(formPanel, row++, "用户名", usernameField, null);
         addRow(formPanel, row++, "密码", passwordField, null);
 
@@ -114,6 +116,7 @@ public class DatasourceEditDialog extends JDialog {
         portField.setText(String.valueOf(source.getPort() <= 0 ? 5432 : source.getPort()));
         databaseField.setText(nullToEmpty(source.getDatabase()));
         jdbcUrlField.setText(nullToEmpty(source.getJdbcUrl()));
+        difyFrontendUrlField.setText(nullToEmpty(source.getDifyFrontendUrl()));
         usernameField.setText(nullToEmpty(source.getUsername()));
         passwordField.setText(nullToEmpty(source.getPassword()));
         enabledCheckBox.setSelected(source.isEnabled());
@@ -124,11 +127,12 @@ public class DatasourceEditDialog extends JDialog {
         String host = hostField.getText().trim();
         String database = databaseField.getText().trim();
         String jdbcUrl = jdbcUrlField.getText().trim();
+        String difyFrontendUrl = difyFrontendUrlField.getText().trim();
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
 
         if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "请填写数据库名称", "提示", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "请填写Dify配置名称", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -157,6 +161,7 @@ public class DatasourceEditDialog extends JDialog {
         datasource.setPort(port);
         datasource.setDatabase(database);
         datasource.setJdbcUrl(jdbcUrl);
+        datasource.setDifyFrontendUrl(difyFrontendUrl);
         datasource.setUsername(username);
         datasource.setPassword(password);
         datasource.setEnabled(enabledCheckBox.isSelected());

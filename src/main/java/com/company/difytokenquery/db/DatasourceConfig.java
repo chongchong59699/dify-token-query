@@ -11,6 +11,7 @@ public class DatasourceConfig {
     private int port = 5432;
     private String database;
     private String jdbcUrl;
+    private String difyFrontendUrl;
     private String username;
     private String password;
     private boolean enabled = true;
@@ -63,6 +64,14 @@ public class DatasourceConfig {
         this.jdbcUrl = jdbcUrl;
     }
 
+    public String getDifyFrontendUrl() {
+        return difyFrontendUrl;
+    }
+
+    public void setDifyFrontendUrl(String difyFrontendUrl) {
+        this.difyFrontendUrl = difyFrontendUrl;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -108,6 +117,11 @@ public class DatasourceConfig {
         if (isBlank(jdbcUrl) && !isBlank(host) && !isBlank(database)) {
             jdbcUrl = buildJdbcUrl(host, port, database);
         }
+        if (difyFrontendUrl == null) {
+            difyFrontendUrl = "";
+        } else {
+            difyFrontendUrl = trimTrailingSlashes(difyFrontendUrl.trim());
+        }
         if (username == null) {
             username = "";
         }
@@ -124,6 +138,7 @@ public class DatasourceConfig {
         copy.setPort(port);
         copy.setDatabase(database);
         copy.setJdbcUrl(jdbcUrl);
+        copy.setDifyFrontendUrl(difyFrontendUrl);
         copy.setUsername(username);
         copy.setPassword(password);
         copy.setEnabled(enabled);
@@ -137,6 +152,7 @@ public class DatasourceConfig {
         setPort(source.getPort());
         setDatabase(source.getDatabase());
         setJdbcUrl(source.getJdbcUrl());
+        setDifyFrontendUrl(source.getDifyFrontendUrl());
         setUsername(source.getUsername());
         setPassword(source.getPassword());
         setEnabled(source.isEnabled());
@@ -149,6 +165,13 @@ public class DatasourceConfig {
         return "jdbc:postgresql://" + safeHost + ":" + safePort + "/" + safeDatabase;
     }
 
+    public static String buildDifyConfigurationUrl(String difyFrontendUrl, String appId) {
+        if (isBlank(difyFrontendUrl) || isBlank(appId)) {
+            return "";
+        }
+        return trimTrailingSlashes(difyFrontendUrl.trim()) + "/app/" + appId.trim() + "/configuration";
+    }
+
     @Override
     public String toString() {
         return name == null ? "" : name;
@@ -156,5 +179,13 @@ public class DatasourceConfig {
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private static String trimTrailingSlashes(String value) {
+        String result = value == null ? "" : value;
+        while (result.endsWith("/")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 }
