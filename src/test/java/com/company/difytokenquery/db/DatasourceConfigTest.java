@@ -35,4 +35,13 @@ public class DatasourceConfigTest {
                 )
         );
     }
+
+    @Test
+    public void copyForDatabaseShouldPreserveCustomJdbcParameters() {
+        DatasourceConfig datasource = new DatasourceConfig();
+        datasource.setJdbcUrl("jdbc:postgresql://db.example:5432/dify?sslmode=require");
+        datasource.setDatabase("dify");
+        DatasourceConfig copy = datasource.copyForDatabase("analytics");
+        assertEquals("jdbc:postgresql://db.example:5432/analytics?sslmode=require", copy.getJdbcUrl());
+    }
 }

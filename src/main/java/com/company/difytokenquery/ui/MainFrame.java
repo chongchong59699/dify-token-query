@@ -60,6 +60,7 @@ public class MainFrame extends JFrame {
     private final JButton copyAllButton = new JButton("复制全部");
     private final JButton manageDatasourceButton = new JButton("管理Dify");
     private final JButton testConnectionButton = new JButton("测试连接");
+    private final JButton databaseExplorerButton = new JButton("数据库查询");
 
     public MainFrame(ConfigService configService, DifyQueryService queryService) {
         this.configService = configService;
@@ -99,6 +100,7 @@ public class MainFrame extends JFrame {
         topPanel.add(datasourceComboBox);
         topPanel.add(manageDatasourceButton);
         topPanel.add(testConnectionButton);
+        topPanel.add(databaseExplorerButton);
 
         tokenTextArea.setLineWrap(true);
         tokenTextArea.setWrapStyleWord(true);
@@ -158,6 +160,7 @@ public class MainFrame extends JFrame {
     private void bindActions() {
         manageDatasourceButton.addActionListener(e -> openDatasourceManager());
         testConnectionButton.addActionListener(e -> testCurrentConnection());
+        databaseExplorerButton.addActionListener(e -> openDatabaseExplorer());
         parseButton.addActionListener(e -> parseTokens());
         queryButton.addActionListener(e -> queryTokens());
         clearButton.addActionListener(e -> clearAll());
@@ -219,6 +222,16 @@ public class MainFrame extends JFrame {
         if (dialog.isChanged()) {
             loadConfig();
         }
+    }
+
+    private void openDatabaseExplorer() {
+        DatasourceConfig datasource = getSelectedDatasource();
+        if (datasource == null) {
+            JOptionPane.showMessageDialog(this, "请先选择Dify配置", "数据库查询", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        DatabaseExplorerFrame frame = new DatabaseExplorerFrame(this, datasource);
+        frame.setVisible(true);
     }
 
     private void testCurrentConnection() {
@@ -445,6 +458,7 @@ public class MainFrame extends JFrame {
         copyAllButton.setEnabled(!working);
         manageDatasourceButton.setEnabled(!working);
         testConnectionButton.setEnabled(!working);
+        databaseExplorerButton.setEnabled(!working);
         datasourceComboBox.setEnabled(!working);
         statusLabel.setText(text);
     }
@@ -470,7 +484,9 @@ public class MainFrame extends JFrame {
             String text = value == null ? "" : String.valueOf(value);
             label.setHorizontalAlignment(JLabel.CENTER);
             if ("编排".equals(text) || "复制链接".equals(text)) {
-                label.setText("<html><a href=''>" + text + "</a></html>");
+                String color = isSelected ? "#FFFFFF" : "#1677CC";
+                label.setText("<html><a style='color:" + color + "' href=''>" + text + "</a></html>");
+                label.setForeground(isSelected ? table.getSelectionForeground() : new java.awt.Color(22, 119, 204));
             } else {
                 label.setText("");
             }

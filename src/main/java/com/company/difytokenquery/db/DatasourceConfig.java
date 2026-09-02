@@ -3,6 +3,8 @@ package com.company.difytokenquery.db;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DatasourceConfig {
     private String id;
@@ -142,6 +144,21 @@ public class DatasourceConfig {
         copy.setUsername(username);
         copy.setPassword(password);
         copy.setEnabled(enabled);
+        return copy;
+    }
+
+    /** Returns a copy connected to another PostgreSQL database while preserving custom JDBC parameters. */
+    public DatasourceConfig copyForDatabase(String targetDatabase) {
+        DatasourceConfig copy = copy();
+        String databaseName = targetDatabase == null ? "" : targetDatabase.trim();
+        copy.setDatabase(databaseName);
+        Matcher matcher = Pattern.compile("^(jdbc:postgresql://[^/?]+)(?:/[^?]*)?(\\?.*)?$", Pattern.CASE_INSENSITIVE).matcher(getEffectiveJdbcUrl());
+        if (matcher.matches()) {
+            copy.setJdbcUrl(matcher.group(1) + "/" + databaseName + (matcher.group(2) == null ? "" : matcher.group(2)));
+        } else if (!isBlank(host)) {
+            copy.setJdbcUrl(buildJdbcUrl(host, port, databaseName));
+        }
+        copy.normalize();
         return copy;
     }
 
