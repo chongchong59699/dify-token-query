@@ -46,6 +46,8 @@ public class ConfigServiceTest {
         datasource.setHost("127.0.0.1");
         datasource.setPort(5433);
         datasource.setDatabase("dify_test");
+        datasource.setDifyUsername("admin@dify.local");
+        datasource.setDifyPassword("difypass");
         datasource.setUsername("u");
         datasource.setPassword("p");
         datasource.setEnabled(true);
@@ -59,6 +61,8 @@ public class ConfigServiceTest {
         assertEquals("test-id", loaded.getDefaultDatasourceId());
         assertEquals(2, loaded.getDatasources().size());
         assertEquals("jdbc:postgresql://127.0.0.1:5433/dify_test", loaded.getDatasources().get(1).getJdbcUrl());
+        assertEquals("admin@dify.local", loaded.getDatasources().get(1).getDifyUsername());
+        assertEquals("difypass", loaded.getDatasources().get(1).getDifyPassword());
     }
 
     @Test
@@ -84,5 +88,7 @@ public class ConfigServiceTest {
         AppConfig loaded = service.load();
 
         assertEquals(ConfigService.DEFAULT_DIFY_FRONTEND_URL, loaded.getDatasources().get(0).getDifyFrontendUrl());
+        assertEquals("", loaded.getDatasources().get(0).getDifyUsername());
+        assertEquals("", loaded.getDatasources().get(0).getDifyPassword());
     }
 }

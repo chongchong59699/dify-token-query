@@ -25,6 +25,8 @@ public class DatasourceEditDialog extends JDialog {
     private final JTextField databaseField = new JTextField(28);
     private final JTextField jdbcUrlField = new JTextField(28);
     private final JTextField difyFrontendUrlField = new JTextField(28);
+    private final JTextField difyUsernameField = new JTextField(28);
+    private final JPasswordField difyPasswordField = new JPasswordField(28);
     private final JTextField usernameField = new JTextField(28);
     private final JPasswordField passwordField = new JPasswordField(28);
     private final JCheckBox enabledCheckBox = new JCheckBox("启用", true);
@@ -60,8 +62,10 @@ public class DatasourceEditDialog extends JDialog {
         addRow(formPanel, row++, "JDBC URL", jdbcUrlField, buildJdbcButton);
 
         addRow(formPanel, row++, "Dify前端地址", difyFrontendUrlField, null);
-        addRow(formPanel, row++, "用户名", usernameField, null);
-        addRow(formPanel, row++, "密码", passwordField, null);
+        addRow(formPanel, row++, "Dify账号(邮箱)", difyUsernameField, null);
+        addRow(formPanel, row++, "Dify密码", difyPasswordField, null);
+        addRow(formPanel, row++, "数据库用户名", usernameField, null);
+        addRow(formPanel, row++, "数据库密码", passwordField, null);
 
         GridBagConstraints checkBoxConstraints = new GridBagConstraints();
         checkBoxConstraints.gridx = 1;
@@ -117,6 +121,8 @@ public class DatasourceEditDialog extends JDialog {
         databaseField.setText(nullToEmpty(source.getDatabase()));
         jdbcUrlField.setText(nullToEmpty(source.getJdbcUrl()));
         difyFrontendUrlField.setText(nullToEmpty(source.getDifyFrontendUrl()));
+        difyUsernameField.setText(nullToEmpty(source.getDifyUsername()));
+        difyPasswordField.setText(nullToEmpty(source.getDifyPassword()));
         usernameField.setText(nullToEmpty(source.getUsername()));
         passwordField.setText(nullToEmpty(source.getPassword()));
         enabledCheckBox.setSelected(source.isEnabled());
@@ -128,6 +134,8 @@ public class DatasourceEditDialog extends JDialog {
         String database = databaseField.getText().trim();
         String jdbcUrl = jdbcUrlField.getText().trim();
         String difyFrontendUrl = difyFrontendUrlField.getText().trim();
+        String difyUsername = difyUsernameField.getText().trim();
+        String difyPassword = new String(difyPasswordField.getPassword());
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
 
@@ -162,6 +170,8 @@ public class DatasourceEditDialog extends JDialog {
         datasource.setDatabase(database);
         datasource.setJdbcUrl(jdbcUrl);
         datasource.setDifyFrontendUrl(difyFrontendUrl);
+        datasource.setDifyUsername(difyUsername);
+        datasource.setDifyPassword(difyPassword);
         datasource.setUsername(username);
         datasource.setPassword(password);
         datasource.setEnabled(enabledCheckBox.isSelected());

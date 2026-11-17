@@ -40,7 +40,7 @@ public class DatasourceManagerDialog extends JDialog {
         this.tableModel = new DatasourceTableModel();
         this.table = new JTable(tableModel);
         initComponents();
-        setSize(980, 460);
+        setSize(1080, 460);
         setLocationRelativeTo(owner);
     }
 
@@ -213,7 +213,7 @@ public class DatasourceManagerDialog extends JDialog {
     }
 
     private class DatasourceTableModel extends AbstractTableModel {
-        private final String[] columns = {"默认", "启用", "名称", "Host", "Port", "Database", "用户名", "JDBC URL", "Dify前端地址"};
+        private final String[] columns = {"默认", "启用", "名称", "Host", "Port", "Database", "数据库用户", "JDBC URL", "Dify前端地址", "Dify账号"};
 
         @Override
         public int getRowCount() {
@@ -253,6 +253,8 @@ public class DatasourceManagerDialog extends JDialog {
                     return datasource.getEffectiveJdbcUrl();
                 case 8:
                     return datasource.getDifyFrontendUrl();
+                case 9:
+                    return datasource.getDifyUsername();
                 default:
                     return "";
             }

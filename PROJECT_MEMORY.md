@@ -86,6 +86,7 @@ where t.token = ?
 - `src/main/java/com/company/difytokenquery/db`：数据源模型和 Dify 查询服务。
 - `src/main/java/com/company/difytokenquery/model`：查询结果模型和状态枚举。
 - `src/main/java/com/company/difytokenquery/parser`：Token 解析逻辑。
+- `src/main/java/com/company/difytokenquery/dify`：Dify Console API 客户端、DSL `.yml` 备份服务与模型批量替换引擎。
 - `src/main/java/com/company/difytokenquery/ui`：Swing 界面。
 - `src/test/java`：单元测试。
 
@@ -102,3 +103,14 @@ where t.token = ?
 - SQL 查询页支持执行全部文本或编辑器选中文本；SELECT/WITH/VALUES/SHOW/EXPLAIN 使用 LIMIT/OFFSET 分页，每页最多 1000 条，当前页和总量分别异步获取。非查询语句显示影响行数。
 - SQL 文件默认保存到 `%APPDATA%\\DifyTokenQueryTool\\queries`，窗口启动时自动载入已有 `.sql` 文件；“保存/另存为”和 `Ctrl+S` 可继续编辑固化文件。
 - 结果表链接在选中行时使用白色高对比度链接色，避免蓝色文字与蓝色选中背景混淆。
+
+## 批量替换应用模型
+
+- 主窗口顶部新增“批量换模型”入口，打开独立工作台 `BatchModelReplaceFrame`，若当前结果表存在已查询到的应用会自动带入勾选 `app_id`。
+- 数据源配置 `DatasourceConfig` 新增可选字段 `difyUsername` 与 `difyPassword`（保存于 `config.json`，兼容旧版配置缺失情况），用于在工作台打开或操作时登录 Dify Console API。
+- 采用“PostgreSQL 检索应用 + Dify Console API 加载模型并执行更新”的混合模式：
+  - 通过 `DifyAppModelRepository` 从 PG 查询 `apps`、`app_model_configs`、`workflows`（优先草稿 `version = 'draft'`，缺省回退 `apps.workflow_id`）及 `api_tokens`。
+  - 通过 `DifyConsoleClient` 调用 `POST /console/api/login`、`/console/api/workspaces/current/models/model-types/llm`、`/console/api/apps/{appId}/export?include_secret=false`、`/console/api/apps/{appId}/model-config`、`/console/api/apps/{appId}/workflows/draft` 与 `/console/api/apps/{appId}/workflows/publish`。
+- `ModelReplacementEngine` 与 `BatchModelReplaceFrame` 支持三种配置方式：单条“原模型 -> 目标模型”、顶部“多规则映射队列”（一次批量替换多种模型），以及右侧“当前选中应用的节点模型配置”（支持多节点工作流逐节点勾选、独立指定目标模型与参数策略）；覆盖基础应用 `app_model_configs.model` 及工作流 `llm`、`parameter-extractor`、`question-classifier`、`agent`（`agent_parameters.model.value`）、`knowledge-retrieval` 单路召回（`single_retrieval_config.model`），跳过 `reranking_model`；当工作流 `llm` 节点在 `completion` 与 `chat` 模式间切换时自动同步转换 `prompt_template` 结构；“原模型”下拉框仅列出各应用/工作流/智能体实际使用到的模型；`completion_params` 默认仅保留通用参数（`temperature`、`top_p`、`max_tokens`、`stop`），可选清空或全保留，并支持全局与逐节点配置新模型的思考层级（`enable_thinking` 开关与 `reasoning_effort` 思考强度，自动移除关闭思考时残留的 `reasoning_effort`，同时按目标模型查询 `/parameter-rules` 提示支持情况）。
+- 正式写入前强制执行 `AppBackupService` 备份：先导出应用 DSL `.yml`（若工作流存在已发布版本且勾选了自动发布，则额外导出 `_published.yml`）及原始 JSON 快照与 `manifest.json` 到 `%APPDATA%\DifyTokenQueryTool\backups\<yyyyMMdd-HHmmss>\`（界面可自选备份目录）；备份失败即中止保存该应用，防止无备份修改。
+- 工作流应用默认仅更新草稿，勾选“工作流更新后自动发布”后才会同步调用发布接口；批量执行前支持 Dry-run 变更预览，执行过程中单应用异常隔离。

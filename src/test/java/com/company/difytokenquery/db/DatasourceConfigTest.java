@@ -37,6 +37,34 @@ public class DatasourceConfigTest {
     }
 
     @Test
+    public void buildDifyAppUrlShouldChooseWorkflowOrConfiguration() {
+        assertEquals(
+                "http://192.2.2.170:8180/app/app-1/workflow",
+                DatasourceConfig.buildDifyAppUrl("http://192.2.2.170:8180/", "app-1", "workflow")
+        );
+        assertEquals(
+                "http://192.2.2.170:8180/app/app-2/workflow",
+                DatasourceConfig.buildDifyAppUrl("http://192.2.2.170:8180", "app-2", "advanced-chat")
+        );
+        assertEquals(
+                "http://192.2.2.170:8180/app/app-3/configuration",
+                DatasourceConfig.buildDifyAppUrl("http://192.2.2.170:8180", "app-3", "chat")
+        );
+    }
+
+    @Test
+    public void copyShouldPreserveDifyCredentials() {
+        DatasourceConfig source = new DatasourceConfig();
+        source.setDifyUsername("admin@example.com");
+        source.setDifyPassword("pw123");
+        source.normalize();
+
+        DatasourceConfig copy = source.copy();
+        assertEquals("admin@example.com", copy.getDifyUsername());
+        assertEquals("pw123", copy.getDifyPassword());
+    }
+
+    @Test
     public void copyForDatabaseShouldPreserveCustomJdbcParameters() {
         DatasourceConfig datasource = new DatasourceConfig();
         datasource.setJdbcUrl("jdbc:postgresql://db.example:5432/dify?sslmode=require");

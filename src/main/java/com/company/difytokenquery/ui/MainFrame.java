@@ -39,7 +39,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class MainFrame extends JFrame {
     private final ConfigService configService;
@@ -61,6 +63,7 @@ public class MainFrame extends JFrame {
     private final JButton manageDatasourceButton = new JButton("管理Dify");
     private final JButton testConnectionButton = new JButton("测试连接");
     private final JButton databaseExplorerButton = new JButton("数据库查询");
+    private final JButton batchReplaceModelButton = new JButton("批量换模型");
 
     public MainFrame(ConfigService configService, DifyQueryService queryService) {
         this.configService = configService;
@@ -101,6 +104,7 @@ public class MainFrame extends JFrame {
         topPanel.add(manageDatasourceButton);
         topPanel.add(testConnectionButton);
         topPanel.add(databaseExplorerButton);
+        topPanel.add(batchReplaceModelButton);
 
         tokenTextArea.setLineWrap(true);
         tokenTextArea.setWrapStyleWord(true);
@@ -161,6 +165,7 @@ public class MainFrame extends JFrame {
         manageDatasourceButton.addActionListener(e -> openDatasourceManager());
         testConnectionButton.addActionListener(e -> testCurrentConnection());
         databaseExplorerButton.addActionListener(e -> openDatabaseExplorer());
+        batchReplaceModelButton.addActionListener(e -> openBatchModelReplace());
         parseButton.addActionListener(e -> parseTokens());
         queryButton.addActionListener(e -> queryTokens());
         clearButton.addActionListener(e -> clearAll());
@@ -222,6 +227,45 @@ public class MainFrame extends JFrame {
         if (dialog.isChanged()) {
             loadConfig();
         }
+    }
+
+    private void openBatchModelReplace() {
+        DatasourceConfig datasource = getSelectedDatasource();
+        if (datasource == null) {
+            JOptionPane.showMessageDialog(this, "请先选择Dify配置", "批量换模型", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        Set<String> preselectedAppIds = collectAppIdsFromResultTable();
+        BatchModelReplaceFrame frame = new BatchModelReplaceFrame(
+                this,
+                datasource,
+                config,
+                configService,
+                preselectedAppIds,
+                this::loadConfig
+        );
+        frame.setVisible(true);
+    }
+
+    private Set<String> collectAppIdsFromResultTable() {
+        Set<String> appIds = new LinkedHashSet<String>();
+        int[] selectedRows = resultTable.getSelectedRows();
+        if (selectedRows != null && selectedRows.length > 0) {
+            for (int viewRow : selectedRows) {
+                int modelRow = resultTable.convertRowIndexToModel(viewRow);
+                AppQueryResult r = resultTableModel.getResultAt(modelRow);
+                if (r.getStatus() == QueryStatus.SUCCESS && r.getAppId() != null && !r.getAppId().trim().isEmpty()) {
+                    appIds.add(r.getAppId().trim());
+                }
+            }
+            return appIds;
+        }
+        for (AppQueryResult r : resultTableModel.getResults()) {
+            if (r.getStatus() == QueryStatus.SUCCESS && r.getAppId() != null && !r.getAppId().trim().isEmpty()) {
+                appIds.add(r.getAppId().trim());
+            }
+        }
+        return appIds;
     }
 
     private void openDatabaseExplorer() {
@@ -459,6 +503,7 @@ public class MainFrame extends JFrame {
         manageDatasourceButton.setEnabled(!working);
         testConnectionButton.setEnabled(!working);
         databaseExplorerButton.setEnabled(!working);
+        batchReplaceModelButton.setEnabled(!working);
         datasourceComboBox.setEnabled(!working);
         statusLabel.setText(text);
     }

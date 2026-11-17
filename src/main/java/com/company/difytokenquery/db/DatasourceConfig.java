@@ -14,6 +14,8 @@ public class DatasourceConfig {
     private String database;
     private String jdbcUrl;
     private String difyFrontendUrl;
+    private String difyUsername;
+    private String difyPassword;
     private String username;
     private String password;
     private boolean enabled = true;
@@ -74,6 +76,22 @@ public class DatasourceConfig {
         this.difyFrontendUrl = difyFrontendUrl;
     }
 
+    public String getDifyUsername() {
+        return difyUsername;
+    }
+
+    public void setDifyUsername(String difyUsername) {
+        this.difyUsername = difyUsername;
+    }
+
+    public String getDifyPassword() {
+        return difyPassword;
+    }
+
+    public void setDifyPassword(String difyPassword) {
+        this.difyPassword = difyPassword;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -124,6 +142,14 @@ public class DatasourceConfig {
         } else {
             difyFrontendUrl = trimTrailingSlashes(difyFrontendUrl.trim());
         }
+        if (difyUsername == null) {
+            difyUsername = "";
+        } else {
+            difyUsername = difyUsername.trim();
+        }
+        if (difyPassword == null) {
+            difyPassword = "";
+        }
         if (username == null) {
             username = "";
         }
@@ -141,6 +167,8 @@ public class DatasourceConfig {
         copy.setDatabase(database);
         copy.setJdbcUrl(jdbcUrl);
         copy.setDifyFrontendUrl(difyFrontendUrl);
+        copy.setDifyUsername(difyUsername);
+        copy.setDifyPassword(difyPassword);
         copy.setUsername(username);
         copy.setPassword(password);
         copy.setEnabled(enabled);
@@ -170,6 +198,8 @@ public class DatasourceConfig {
         setDatabase(source.getDatabase());
         setJdbcUrl(source.getJdbcUrl());
         setDifyFrontendUrl(source.getDifyFrontendUrl());
+        setDifyUsername(source.getDifyUsername());
+        setDifyPassword(source.getDifyPassword());
         setUsername(source.getUsername());
         setPassword(source.getPassword());
         setEnabled(source.isEnabled());
@@ -187,6 +217,16 @@ public class DatasourceConfig {
             return "";
         }
         return trimTrailingSlashes(difyFrontendUrl.trim()) + "/app/" + appId.trim() + "/configuration";
+    }
+
+    public static String buildDifyAppUrl(String difyFrontendUrl, String appId, String mode) {
+        if (isBlank(difyFrontendUrl) || isBlank(appId)) {
+            return "";
+        }
+        String suffix = ("workflow".equalsIgnoreCase(mode) || "advanced-chat".equalsIgnoreCase(mode))
+                ? "/workflow"
+                : "/configuration";
+        return trimTrailingSlashes(difyFrontendUrl.trim()) + "/app/" + appId.trim() + suffix;
     }
 
     @Override
